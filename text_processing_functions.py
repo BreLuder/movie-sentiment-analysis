@@ -1,3 +1,4 @@
+import spacy
 import string
 import contractions
 from unidecode import unidecode
@@ -5,8 +6,12 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from nltk.corpus import stopwords
 
+print("Libreria caricata")
+nlp_en = spacy.load("en_core_web_sm", disable=['ner', 'parser'])
+print("modello caricato")
 
-def text_polishing(corpus, stop_words):
+
+def txt_polishing(corpus, stop_words):
   elaborated_texts=[]
   for text in corpus:
     expanded_text = contractions.fix(text) # Expansion of contractions didn't-> did not
@@ -22,6 +27,36 @@ def text_polishing(corpus, stop_words):
           cleaned_words.append(clean_word)
     elaborated_texts.append(" ".join(cleaned_words))
   return elaborated_texts
+
+
+def text_polishing(corpus,stop_words):
+    elaborated_texts = []
+    for text in corpus:
+        #Expanding conctractions
+        expanded_text = contractions.fix(text)
+
+        #Transformation into doc object.
+        doc = nlp_en(expanded_text)
+
+        cleaned_words = []
+        for token in doc:
+            if token.pos_ == "PROPN": #Eliminating Proper Nouns from the analysis
+                continue
+
+            #Tokenization, characters standardization, elimination of punctuation.
+            clean_word = token.lemma_.lower()
+            clean_word = unidecode(clean_word)
+            clean_word = "".join([i for i in clean_word if i not in string.punctuation])
+
+            #Elimination of words containing numbers.
+            if clean_word and clean_word.isalpha() and clean_word not in stop_words:
+                cleaned_words.append(clean_word)
+
+        elaborated_texts.append(" ".join(cleaned_words))
+    return elaborated_texts
+
+
+
 
 def top_tokens_extraction(vectorizer, final_clf):
   feature_names = vectorizer.get_feature_names_out()
